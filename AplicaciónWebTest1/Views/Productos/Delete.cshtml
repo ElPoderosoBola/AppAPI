@@ -1,0 +1,24 @@
+@model AplicaciónWebTest1.Models.Producto
+@{
+    ViewData["Title"] = "Eliminar Producto";
+}
+
+<h1 class="mb-3">Eliminar Producto</h1>
+<p>¿Seguro que quieres eliminar este producto?</p>
+
+<div class="mb-3">
+    <strong>Id:</strong> @Model?.Id
+</div>
+<div class="mb-3">
+    <strong>Nombre:</strong> @Model?.Nombre
+</div>
+<div class="mb-3">
+    <strong>Precio:</strong> @Model?.Precio.ToString("C")
+</div>
+
+<form asp-action="Delete" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
