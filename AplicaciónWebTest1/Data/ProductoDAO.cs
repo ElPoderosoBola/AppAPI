@@ -1,11 +1,11 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using AplicaciónWebTest1.Models;
+using AplicaciÃ³nWebTest1.Models;
 using Microsoft.Data.SqlClient;
 
-namespace AplicaciónWebTest1.Data
+namespace AplicaciÃ³nWebTest1.Data
 {
     public class ProductoDAO
     {
@@ -22,8 +22,11 @@ namespace AplicaciónWebTest1.Data
 
             var ordenColumna = MapearColumnaOrden(ordenarPor);
             var orden = ordenarDesc ? $"{ordenColumna} DESC" : ordenColumna;
-            pageSize = Math.Clamp(pageSize, 1, _config.PageSizeMax > 0 ? _config.PageSizeMax : pageSize);
+
             pageIndex = Math.Max(1, pageIndex);
+
+            int viewPageSize = pageSize > 0 ? pageSize : (_config.PageSizeDefault > 0 ? _config.PageSizeDefault : 10);
+            if (_config.PageSizeMax > 0) viewPageSize = Math.Min(viewPageSize, _config.PageSizeMax);
 
             try
             {
@@ -35,8 +38,8 @@ namespace AplicaciónWebTest1.Data
 
                 command.Parameters.AddWithValue("@ordenarPor", orden);
                 command.Parameters.AddWithValue("@paginaNum", pageIndex);
-                command.Parameters.AddWithValue("@tamanoPagina", pageSize);
-                command.Parameters.AddWithValue("@filtroNombre", string.IsNullOrWhiteSpace(busqueda) ? (object)DBNull.Value : busqueda);
+                command.Parameters.AddWithValue("@tamanoPagina", viewPageSize);
+                command.Parameters.AddWithValue("@filtroNombre", string.IsNullOrWhiteSpace(busqueda) ? "" : busqueda);
 
                 await connection.OpenAsync();
                 await using var reader = await command.ExecuteReaderAsync();
@@ -56,14 +59,15 @@ namespace AplicaciónWebTest1.Data
                 throw new InvalidOperationException("Error al listar productos.", ex);
             }
 
-            // Sin total devuelto por el SP, estimamos en base a la página actual
-            var total = ((pageIndex - 1) * pageSize) + productos.Count;
-            return new PagedResult<Producto>(productos, total, pageIndex, pageSize);
+            bool hayMas = productos.Count == viewPageSize;
+
+            var totalEstimado = ((pageIndex - 1) * viewPageSize) + productos.Count + (hayMas ? 1 : 0);
+
+            return new PagedResult<Producto>(productos, totalEstimado, pageIndex, viewPageSize);
         }
 
         public async Task<Producto?> ObtenerPorIdAsync(int id)
         {
-            // No hay SP dedicado; usamos Listar con un pageSize amplio y filtramos en memoria
             var resultado = await ListarAsync(null, "ID", false, 1, _config.PageSizeMax > 0 ? _config.PageSizeMax : 100);
             return resultado.Items.Find(p => p.Id == id);
         }
@@ -140,5 +144,7 @@ namespace AplicaciónWebTest1.Data
             "precio" => "Precio",
             _ => "ID"
         };
+
+
     }
 }
