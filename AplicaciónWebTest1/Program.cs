@@ -28,6 +28,7 @@ namespace AplicaciónWebTest1
 
             app.UseAuthorization();
 
+            app.MapControllers();
             app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
